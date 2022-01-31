@@ -1,0 +1,35 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: DEVOPS-triggertemplate
+  namespace: DEVOPS
+spec:
+  params:
+  - name: git-repo-url
+    description: The git repository url
+  - name: git-revision
+    description: The git revision
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1beta1
+    kind: PipelineRun
+    metadata:
+      generateName: build-deploy-$(tt.params.git-revision)
+      namespace: DEVOPS
+      generation: 1
+    spec:
+      params:
+        - name: git-revision
+          value: $(tt.params.git-revision)
+        - name: git-repo-url
+          value: $(tt.params.git-repo-url)
+      pipelineRef:
+        name: DEVOPS-pipeline-build
+      serviceAccountName: pipeline
+      timeout: 1h0m0s
+      workspaces:
+        - name: source
+          persistentVolumeClaim:
+            claimName: DEVOPS-pipeline-claim
+        - configMap:
+            name: DEVOPS-maven-settings-cm
+          name: maven-settings
